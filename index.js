@@ -45,7 +45,7 @@ function createHandler (options = {}) {
   }
 
   return async function (request, response) {
-    let filePath = path.join(options.directory, path.normalize(request.url));
+    let filePath = path.join(options.directory, path.normalize('/' + request.url));
 
     const stat = await getStats(filePath);
 
