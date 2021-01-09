@@ -13,7 +13,6 @@ const spa = argv.s || argv.spa;
 
 function main () {
   const handler = servatron({
-    port,
     directory,
     spa
   });
@@ -23,7 +22,7 @@ function main () {
 
   const address = server.address();
 
-  console.log('Web server running:', `http://localhost:${address.port}`)
+  console.log('Web server running:', `http://localhost:${address.port}`);
 }
 
 main();

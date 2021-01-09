@@ -39,7 +39,7 @@ function createHandler (options = {}) {
 
     getStats(spaIndex).then(stat => {
       if (!stat) {
-        console.log(`--spa mode will not work as index file (${spaIndex}) not found`)
+        console.log(`--spa mode will not work as index file (${spaIndex}) not found`);
       }
     });
   }
