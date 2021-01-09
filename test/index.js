@@ -18,6 +18,26 @@ function createServer (handler) {
   };
 }
 
+test('can not access parent directory', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test'
+  });
+  const { server, url } = createServer(handler);
+
+  const response = await axios(`${url}/../package.json`, {
+    transformResponse: [],
+    validateStatus: () => true
+  });
+
+  server.close();
+
+  t.equal(response.status, 404);
+  t.equal(response.data, '404 - not found', 'should have the correct body');
+  t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
+
 test('serve with defaults - file found', async t => {
   t.plan(3);
 
