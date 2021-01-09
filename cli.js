@@ -18,11 +18,13 @@ function main () {
   });
 
   const server = http.createServer(handler);
+
+  server.on('listening', function () {
+    const address = server.address();
+    console.log('Web server running:', `http://localhost:${address.port}`);
+  });
+
   server.listen(port);
-
-  const address = server.address();
-
-  console.log('Web server running:', `http://localhost:${address.port}`);
 }
 
 main();
