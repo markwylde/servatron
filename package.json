@@ -1,0 +1,34 @@
+{
+  "name": "servatron",
+  "version": "1.0.0",
+  "description": "Creates a static http server",
+  "main": "index.js",
+  "bin": {
+    "servatron": "cli.js"
+  },
+  "scripts": {
+    "test": "node --unhandled-rejections=strict test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "mime": "^2.4.7",
+    "minimist": "^1.2.5"
+  },
+  "devDependencies": {
+    "axios": "^0.21.1",
+    "basictap": "^1.1.11"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markwylde/servatron.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markwylde/servatron/issues"
+  },
+  "homepage": "https://github.com/markwylde/servatron#readme"
+}
