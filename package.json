@@ -1,6 +1,6 @@
 {
   "name": "servatron",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Creates a static http server",
   "main": "index.js",
   "bin": {
