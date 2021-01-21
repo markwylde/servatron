@@ -20,7 +20,7 @@ servatron --directory dist --port 8000 --spa
 Optional arguments are:
 
 ```text
---directory (-d) pathName      specify a directory to server the files from
+--directory (-d) pathName      specify a directory to server the files from (can provider multiple)
 --port (-p) number             what port to listen on
 --spa                          when a path is not found, deliver the index.html file
 ```

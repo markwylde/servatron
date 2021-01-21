@@ -15,12 +15,11 @@ function getStats (filePath) {
 
 function send404 (options, request, response) {
   if (options.spa) {
-    const spaIndex = path.join(options.directory, 'index.html');
     response.writeHead(200, {
-      'content-type': mime.getType(spaIndex)
+      'content-type': mime.getType(options.spaIndex)
     });
 
-    fs.createReadStream(spaIndex).pipe(response);
+    fs.createReadStream(options.spaIndex).pipe(response);
     return;
   }
 
@@ -31,30 +30,44 @@ function send404 (options, request, response) {
   response.end('404 - not found');
 }
 
+async function searchDirectories (directories, pathname) {
+  for (const directory of directories) {
+    const filePath = path.join(directory, pathname);
+    const stat = await getStats(filePath);
+
+    if (stat) {
+      return {
+        directory,
+        filePath,
+        stat
+      };
+    }
+  }
+}
+
 function createHandler (options = {}) {
-  options.directory = options.directory ? path.resolve(options.directory) : process.cwd();
+  options.directory = options.directory || process.cwd();
+  const directories = Array.isArray(options.directory) ? options.directory : [options.directory];
 
   if (options.spa) {
-    const spaIndex = path.join(options.directory, 'index.html');
-
-    getStats(spaIndex).then(stat => {
+    options.spaIndex = path.join(directories[0], options.spa === true ? 'index.html' : options.spa);
+    getStats(options.spaIndex).then(stat => {
       if (!stat) {
-        console.log(`--spa mode will not work as index file (${spaIndex}) not found`);
+        console.log(`--spa mode will not work as index file (${options.spaIndex}) not found`);
       }
     });
   }
 
   return async function (request, response) {
-    let filePath = path.join(options.directory, path.normalize('/' + request.url));
+    const found = await searchDirectories(directories, path.normalize('/' + request.url));
 
-    const stat = await getStats(filePath);
-
-    if (!stat) {
+    if (!found) {
       send404(options, request, response);
       return;
     }
 
-    if (stat.isDirectory) {
+    let filePath = found.filePath;
+    if (found.stat.isDirectory) {
       filePath = path.join(filePath, 'index.html');
       const indexStat = await getStats(filePath);
       if (!indexStat) {
