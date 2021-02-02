@@ -3,14 +3,27 @@ const path = require('path');
 const mime = require('mime');
 
 function getStats (filePath) {
-  return fs.promises
-    .stat(filePath)
-    .then((stats) => {
-      return {
-        isDirectory: stats.isDirectory()
-      };
-    })
-    .catch(() => false);
+  return new Promise(resolve => {
+    const stream = fs.createReadStream(filePath);
+
+    stream.on('readable', () => {
+      resolve({
+        isDirectory: false
+      });
+      stream.close();
+    });
+
+    stream.on('error', error => {
+      if (error.code === 'ENOENT') {
+        resolve(false);
+        return;
+      }
+
+      resolve({
+        isDirectory: true
+      });
+    });
+  });
 }
 
 function send404 (options, request, response) {
