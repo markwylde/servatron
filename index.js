@@ -72,7 +72,8 @@ function createHandler (options = {}) {
   }
 
   return async function (request, response) {
-    const found = await searchDirectories(directories, path.normalize('/' + request.url));
+    const url = new URL(request.url, 'http://example.com');
+    const found = await searchDirectories(directories, path.normalize('/' + url.pathname));
 
     if (!found) {
       send404(options, request, response);

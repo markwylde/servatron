@@ -13,12 +13,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "mime": "^2.4.7",
+    "mime": "^2.5.2",
     "minimist": "^1.2.5"
   },
   "devDependencies": {
     "axios": "^0.21.1",
-    "basictap": "^1.1.11"
+    "basictap": "^1.1.13"
   },
   "directories": {
     "test": "test"
