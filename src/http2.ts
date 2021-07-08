@@ -7,7 +7,7 @@ import { PathType, getPathInfo } from './getPathInfo';
 import { searchDirectoriesForPath } from './searchDirectoriesForPath';
 
 export interface ServatronOptions {
-  directory: string,
+  directory: string | Array<string>,
   spa?: boolean,
   spaIndex?: string
 }
@@ -30,6 +30,10 @@ function send404 (options: ServatronOptions, stream: http2.ServerHttp2Stream) {
   stream.end('404 - not found');
 }
 
+/**
+ * Create a handler that will respond to a request
+ * with the respond from a static file lookup.
+ **/
 function servatron (options: ServatronOptions) {
   options = options || { directory: process.cwd() }
   options.directory = options.directory || process.cwd();

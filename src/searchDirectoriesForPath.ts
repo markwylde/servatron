@@ -8,6 +8,13 @@ interface FoundDirectory {
   filePathType: PathType
 }
 
+/**
+ * Recursively look through a list of directories to find
+ * a path that exists.
+ *
+ * @param {Array<string>} directories An array of directory paths
+ * @param {string} pathname The relative to find
+ **/
 export async function searchDirectoriesForPath (
   directories: Array<string>,
   pathname: string
