@@ -1,6 +1,9 @@
 node_modules
 src
 test
+docs
+tsconfig.json
 .eslintrc.js
 .gitignore
-tsconfig.json
+.github
+

@@ -2,7 +2,7 @@
   "name": "servatron",
   "version": "2.0.4",
   "description": "Creates a static http server",
-  "main": "bin/cli.js",
+  "main": "http2.js",
   "bin": {
     "servatron": "bin/cli.js"
   },
@@ -13,13 +13,16 @@
     "lint": "eslint .",
     "test": "node --unhandled-rejections=strict test"
   },
-  "config": {
-    "exportAliases": {
-      "http": "./lib/http.js",
-      "http2": "./lib/http2.js"
-    }
-  },
-  "keywords": [],
+  "keywords": [
+    "static",
+    "http",
+    "http2",
+    "serve",
+    "server",
+    "web",
+    "web server",
+    "website"
+  ],
   "author": {
     "email": "me@markwylde.com",
     "name": "Mark Wylde",

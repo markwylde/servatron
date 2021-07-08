@@ -7,8 +7,9 @@
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./lib"
+    "outDir": "./"
   },
+  "exclude": [],
   "include": [
     "./src"
   ],
