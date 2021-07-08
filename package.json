@@ -8,7 +8,7 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "generate-export-aliases && tsc",
+    "build": "tsc && generate-export-aliases",
     "docs": "typedoc src",
     "lint": "eslint .",
     "test": "node --unhandled-rejections=strict test"
