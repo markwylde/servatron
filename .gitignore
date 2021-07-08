@@ -1,5 +1,3 @@
 node_modules
 lib
 docs
-/*.js
-/*.d.ts

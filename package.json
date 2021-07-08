@@ -8,7 +8,7 @@
   },
   "scripts": {
     "prepare": "npm run build",
-    "build": "tsc && generate-export-aliases",
+    "build": "tsc",
     "docs": "typedoc src",
     "lint": "eslint .",
     "test": "node --unhandled-rejections=strict test"
@@ -38,7 +38,6 @@
     "axios": "^0.21.1",
     "basictap": "^2.0.1",
     "fetch-h2": "^3.0.0",
-    "generate-export-aliases": "^1.1.0",
     "semistandard": "^16.0.1",
     "typedoc": "^0.21.2",
     "typescript": "^4.3.5"
