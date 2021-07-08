@@ -54,8 +54,12 @@ function mainHttp2 () {
 
   server.on('stream', handler);
 
+  server.on('listening', function () {
+    const address = server.address();
+    console.log('Web server running:', `https://${bindHost}:${address.port}`);
+  });
+
   server.listen(port, bindHost);
-  console.log('Web server running:', `https://${bindHost}:${port}`);
 }
 
 if (isHttp2) {
