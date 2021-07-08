@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./lib"
+  },
+  "include": [
+    "./src"
+  ],
+  "typedocOptions": {
+    "entryPoints": ["src"],
+    "out": "docs"
+  }
+}
