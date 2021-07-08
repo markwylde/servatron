@@ -1,7 +1,7 @@
 {
   "name": "servatron",
   "version": "2.1.1",
-  "description": "Creates a static http server",
+  "description": "Create a handler that can server static files using the NodeJS http/http2 modules, or use the inbuilt cli server to quickly run a web server.",
   "main": "http2.js",
   "bin": {
     "servatron": "bin/cli.js"
@@ -17,11 +17,15 @@
     "static",
     "http",
     "http2",
+    "https",
     "serve",
     "server",
     "web",
     "web server",
-    "website"
+    "website",
+    "multiplex",
+    "assets",
+    "static server"
   ],
   "author": {
     "email": "me@markwylde.com",
@@ -35,7 +39,7 @@
   },
   "devDependencies": {
     "@types/mime": "^2.0.3",
-    "@types/node": "^16.0.1",
+    "@types/node": "^16.0.2",
     "@typescript-eslint/eslint-plugin": "^4.28.2",
     "@typescript-eslint/parser": "^4.28.2",
     "axios": "^0.21.1",
