@@ -6,8 +6,8 @@ const http = require('http');
 const http2 = require('http2');
 const minimist = require('minimist');
 
-const servatron = require('../lib/http').default;
-const servatronHttp2 = require('../lib/http2').default;
+const servatron = require('../http').default;
+const servatronHttp2 = require('../http2').default;
 
 const argv = minimist(process.argv);
 
