@@ -4,7 +4,7 @@ const fs = require('fs');
 const { context } = require('fetch-h2');
 const test = require('basictap');
 
-const servatron = require('../http2').default;
+const servatron = require('../http2');
 
 const { fetch, disconnectAll } = context({
   session: { rejectUnauthorized: false }

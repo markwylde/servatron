@@ -4,7 +4,7 @@ const fs = require('fs');
 const axios = require('axios');
 const test = require('basictap');
 
-const servatron = require('../http').default;
+const servatron = require('../http');
 
 function createServer (handler) {
   const server = http.createServer(handler);
