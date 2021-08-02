@@ -74,3 +74,7 @@ function servatron (options: ServatronOptions) {
 }
 
 export default servatron;
+
+if (module) {
+  module.exports = servatron;
+}
