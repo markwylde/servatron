@@ -43,7 +43,7 @@ function servatron (options: ServatronOptions) {
   if (options.spa) {
     options.spaIndex = path.join(directories[0], options.spaIndex || 'index.html');
     getPathInfo(options.spaIndex).then(pathInfo => {
-      if (pathInfo === PathType.File) {
+      if (pathInfo !== PathType.File) {
         console.log(`--spa mode will not work as index file (${options.spaIndex}) not found`);
       }
     });
