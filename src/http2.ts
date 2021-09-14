@@ -6,13 +6,13 @@ import * as mime from 'mime';
 import { PathType, getPathInfo } from './getPathInfo';
 import { searchDirectoriesForPath } from './searchDirectoriesForPath';
 
-export interface ServatronOptions {
+export interface ServatronHttp2Options {
   directory: string | Array<string>,
   spa?: boolean,
   spaIndex?: string
 }
 
-function send404 (options: ServatronOptions, stream: http2.ServerHttp2Stream) {
+function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Stream) {
   if (options.spa && options.spaIndex) {
     stream.respond({
       'content-type': mime.getType(options.spaIndex) || 'application/octet-stream',
@@ -34,7 +34,7 @@ function send404 (options: ServatronOptions, stream: http2.ServerHttp2Stream) {
  * Create a handler that will respond to a request
  * with the respond from a static file lookup.
  **/
-function servatron (options: ServatronOptions) {
+function servatron (options: ServatronHttp2Options) {
   options = options || { directory: process.cwd() }
   options.directory = options.directory || process.cwd();
 
