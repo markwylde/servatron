@@ -39,15 +39,15 @@
   },
   "devDependencies": {
     "@types/mime": "^2.0.3",
-    "@types/node": "^16.0.2",
-    "@typescript-eslint/eslint-plugin": "^4.28.2",
-    "@typescript-eslint/parser": "^4.28.2",
-    "axios": "^0.21.1",
-    "basictap": "^2.0.1",
+    "@types/node": "^16.9.1",
+    "@typescript-eslint/eslint-plugin": "^4.31.1",
+    "@typescript-eslint/parser": "^4.31.1",
+    "axios": "^0.21.4",
+    "basictap": "^2.2.1",
     "fetch-h2": "^3.0.0",
     "semistandard": "^16.0.1",
-    "typedoc": "^0.21.2",
-    "typescript": "^4.3.5"
+    "typedoc": "^0.22.3",
+    "typescript": "^4.4.3"
   },
   "directories": {
     "test": "test"
