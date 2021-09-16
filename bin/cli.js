@@ -5,6 +5,7 @@ const fs = require('fs');
 const http = require('http');
 const http2 = require('http2');
 const minimist = require('minimist');
+const packageJson = require('../package.json');
 
 const servatron = require('../http');
 const servatronHttp2 = require('../http2');
@@ -62,7 +63,24 @@ function mainHttp2 () {
   server.listen(port, bindHost);
 }
 
-if (isHttp2) {
+if (argv.help || argv._[2] === 'help') {
+  console.log([
+    `${packageJson.name} cli - v${packageJson.version}`,
+    '',
+    'Example usage:',
+    '  servatron --directory dist --port 8000 --spa',
+    '',
+    'Options:',
+    '  --directory (-d) pathName      specify a directory to server the files from (can provider multiple)',
+    '  --bind (-b) hostname           what host to bind on (default: 0.0.0.0)',
+    '  --port (-p) number             what port to listen on (default: 8000)',
+    '  --spa                          when a path is not found, deliver the index file',
+    '  --spa-index                    what name spa mode should look for the html file (default: index.html)',
+    '  --key                          what key to use for http2',
+    '  --cert                         what cert to use for http2',
+    '  --ca                           optionally add a ca for http2'
+  ].join('\n'));
+} else if (isHttp2) {
   mainHttp2();
 } else {
   main();
