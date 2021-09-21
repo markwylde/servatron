@@ -1,6 +1,6 @@
 {
   "name": "servatron",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "Create a handler that can server static files using the NodeJS http/http2 modules, or use the inbuilt cli server to quickly run a web server.",
   "main": "http2.js",
   "bin": {
