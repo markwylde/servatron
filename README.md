@@ -25,6 +25,7 @@ Optional arguments are:
 --port (-p) number             what port to listen on (default: 8000)
 --spa                          when a path is not found, deliver the index file
 --spa-index                    what name spa mode should look for the html file (default: index.html)
+--http2                        use http2 as the server protocol
 --key                          what key to use for http2
 --cert                         what cert to use for http2
 --ca                           optionally add a ca for http2
