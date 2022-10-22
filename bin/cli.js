@@ -16,7 +16,8 @@ const bindHost = argv.b || argv.bind || '0.0.0.0';
 const port = argv.p || argv.port || 8000;
 const directory = argv.d || argv.directory;
 const spa = argv.s || argv.spa;
-const spaIndex = argv.i || argv.spaIndex;
+const spaIndex = argv.i || argv['spa-index'];
+const antiCors = argv['anti-cors'];
 const isHttp2 = argv.http2;
 const key = argv.key || path.resolve(__dirname, '../defaultCerts/key.pem');
 const cert = argv.cert || path.resolve(__dirname, '../defaultCerts/cert.pem');
@@ -26,7 +27,8 @@ function main () {
   const handler = servatron({
     directory,
     spa,
-    spaIndex
+    spaIndex,
+    antiCors
   });
 
   const server = http.createServer(handler);
@@ -43,7 +45,8 @@ function mainHttp2 () {
   const handler = servatronHttp2({
     directory,
     spa,
-    spaIndex
+    spaIndex,
+    antiCors
   });
 
   const server = http2.createSecureServer({
@@ -79,7 +82,8 @@ if (argv.help || argv._[2] === 'help') {
     '  --http2                        use http2 as the server protocol',
     '  --key                          what key to use for http2',
     '  --cert                         what cert to use for http2',
-    '  --ca                           optionally add a ca for http2'
+    '  --ca                           optionally add a ca for http2',
+    '  --anti-cors                    set all CORS headers to the most flexible'
   ].join('\n'));
 } else if (isHttp2) {
   mainHttp2();

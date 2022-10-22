@@ -5,16 +5,21 @@ import * as mime from 'mime';
 
 import { PathType, getPathInfo } from './getPathInfo';
 import { searchDirectoriesForPath } from './searchDirectoriesForPath';
+import generateAntiCorsHeaders from './generateAntiCorsHeaders';
 
 export interface ServatronHttpOptions {
   directory: string | Array<string>,
   spa?: boolean,
-  spaIndex?: string
+  spaIndex?: string,
+  antiCors?: boolean,
 }
 
 function send404 (options: ServatronHttpOptions, request: http.IncomingMessage, response: http.ServerResponse) {
+  const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders (request.headers) : null;
+
   if (options.spa && options.spaIndex) {
     response.writeHead(200, {
+      ...antiCorsHeaders,
       'content-type': mime.getType(options.spaIndex) || 'application/octet-stream'
     });
 
@@ -23,6 +28,7 @@ function send404 (options: ServatronHttpOptions, request: http.IncomingMessage, 
   }
 
   response.writeHead(404, {
+    ...antiCorsHeaders,
     'content-type': 'text/plain'
   });
   response.end('404 - not found');
@@ -65,7 +71,9 @@ function servatron (options: ServatronHttpOptions) {
       }
     }
 
+    const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders (request.headers) : null;
     response.writeHead(200, {
+      ...antiCorsHeaders,
       'content-type': mime.getType(filePath) || 'application/octet-stream'
     });
 

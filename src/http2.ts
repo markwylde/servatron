@@ -5,16 +5,21 @@ import * as mime from 'mime';
 
 import { PathType, getPathInfo } from './getPathInfo';
 import { searchDirectoriesForPath } from './searchDirectoriesForPath';
+import generateAntiCorsHeaders from './generateAntiCorsHeaders';
 
 export interface ServatronHttp2Options {
   directory: string | Array<string>,
   spa?: boolean,
-  spaIndex?: string
+  spaIndex?: string,
+  antiCors?: boolean
 }
 
-function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Stream) {
+function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
+  const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders (headers) : null;
+
   if (options.spa && options.spaIndex) {
     stream.respond({
+      ...antiCorsHeaders,
       'content-type': mime.getType(options.spaIndex) || 'application/octet-stream',
       ':status': 200
     });
@@ -24,6 +29,7 @@ function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Strea
   }
 
   stream.respond({
+    ...antiCorsHeaders,
     'content-type': 'text/plain',
     ':status': 404
   });
@@ -53,7 +59,7 @@ function servatron (options: ServatronHttp2Options) {
     const found = await searchDirectoriesForPath(directories, path.normalize(headers[':path'] || '/'));
 
     if (!found) {
-      send404(options, stream);
+      send404(options, stream, headers);
       return;
     }
 
@@ -62,12 +68,14 @@ function servatron (options: ServatronHttp2Options) {
       filePath = path.join(filePath, 'index.html');
       const indexStat = await getPathInfo(filePath);
       if (indexStat === PathType.NotFound) {
-        send404(options, stream);
+        send404(options, stream, headers);
         return;
       }
     }
 
+    const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders (headers) : null;
     stream.respond({
+      ...antiCorsHeaders,
       'content-type': mime.getType(filePath) || 'application/octet-stream',
       ':status': 200
     });
