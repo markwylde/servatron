@@ -29,6 +29,7 @@ Optional arguments are:
 --key                          what key to use for http2
 --cert                         what cert to use for http2
 --ca                           optionally add a ca for http2
+--anti-cors                    set all CORS headers to the most flexible
 ```
 
 ### Code - HTTP 1
