@@ -11,7 +11,7 @@
     "build": "tsc",
     "docs": "typedoc src",
     "lint": "eslint .",
-    "test": "node --unhandled-rejections=strict test"
+    "test": "c8 node --unhandled-rejections=strict test"
   },
   "keywords": [
     "static",
@@ -35,19 +35,20 @@
   "license": "MIT",
   "dependencies": {
     "mime": "^3.0.0",
-    "minimist": "^1.2.6"
+    "minimist": "^1.2.7"
   },
   "devDependencies": {
     "@types/mime": "^3.0.1",
-    "@types/node": "^18.7.16",
-    "@typescript-eslint/eslint-plugin": "^5.36.2",
-    "@typescript-eslint/parser": "^5.36.2",
-    "axios": "^0.27.2",
+    "@types/node": "^18.11.3",
+    "@typescript-eslint/eslint-plugin": "^5.40.1",
+    "@typescript-eslint/parser": "^5.40.1",
+    "axios": "^1.1.3",
     "basictap": "^3.4.3",
+    "c8": "^7.12.0",
     "fetch-h2": "^3.0.2",
     "semistandard": "^16.0.1",
-    "typedoc": "^0.23.14",
-    "typescript": "^4.8.3"
+    "typedoc": "^0.23.17",
+    "typescript": "^4.8.4"
   },
   "directories": {
     "test": "test"

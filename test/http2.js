@@ -29,7 +29,7 @@ function createServer (handler) {
 }
 
 test('http2 - can not access parent directory', async t => {
-  t.plan(3);
+  t.plan(4);
 
   const handler = servatron({
     directory: 'test'
@@ -49,6 +49,57 @@ test('http2 - can not access parent directory', async t => {
   t.equal(response.status, 404);
   t.equal(responseData, '404 - not found', 'should have the correct body');
   t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+  t.equal(response.headers.get('access-control-allow-origin'), null, 'should have the correct cors header');
+});
+
+test('http2 - sets cors correctly', async t => {
+  t.plan(4);
+
+  const handler = servatron({
+    directory: 'test',
+    antiCors: true
+  });
+  const { server, url } = createServer(handler);
+
+  const response = await fetch(`${url}/../package.json`, {
+    session: {
+      rejectUnauthorized: false
+    }
+  });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 404);
+  t.equal(responseData, '404 - not found', 'should have the correct body');
+  t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+  t.equal(response.headers.get('access-control-allow-origin'), '*', 'should have the correct cors header');
+});
+
+test('http2 - sets cors specifically on origin', async t => {
+  t.plan(1);
+
+  const handler = servatron({
+    directory: 'test',
+    antiCors: true
+  });
+  const { server, url } = createServer(handler);
+
+  const response = await fetch(`${url}/../package.json`, {
+    allowForbiddenHeaders: true,
+    headers: {
+      Origin: 'example.com'
+    },
+    session: {
+      rejectUnauthorized: false
+    }
+  });
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.headers.get('access-control-allow-origin'), 'example.com', 'should have the correct cors header');
 });
 
 test('http2 - serve with defaults - file found', async t => {
