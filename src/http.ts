@@ -15,7 +15,7 @@ export interface ServatronHttpOptions {
 }
 
 function send404 (options: ServatronHttpOptions, request: http.IncomingMessage, response: http.ServerResponse) {
-  const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders (request.headers) : null;
+  const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(request.headers) : null;
 
   if (options.spa && options.spaIndex) {
     response.writeHead(200, {
@@ -36,10 +36,10 @@ function send404 (options: ServatronHttpOptions, request: http.IncomingMessage, 
 
 /**
  * Create a handler that will respond to a request
- * with the respond from a static file lookup.
+ * with the response from a static file lookup.
  **/
-function servatron (options: ServatronHttpOptions) {
-  options = options || { directory: process.cwd() }
+function servatron(options: ServatronHttpOptions) {
+  options = options || { directory: process.cwd() };
   options.directory = options.directory || process.cwd();
 
   const directories = Array.isArray(options.directory) ? options.directory : [options.directory];
@@ -54,14 +54,22 @@ function servatron (options: ServatronHttpOptions) {
   }
 
   return async function (request: http.IncomingMessage, response: http.ServerResponse) {
-    const found = await searchDirectoriesForPath(directories, path.normalize('/' + request.url));
+    let decodedPath
+    try {
+      decodedPath = decodeURIComponent(request.url as string);
+    } catch (error) {
+      send404(options, request, response);
+      return;
+    }
+    const normalizedPath = path.normalize('/' + decodedPath);
+    const found = await searchDirectoriesForPath(directories, normalizedPath.slice(1));
 
     if (!found) {
       send404(options, request, response);
       return;
     }
 
-    let filePath = decodeURIComponent(found.filePath);
+    let filePath = found.filePath;
     if (found.filePathType === PathType.Directory) {
       filePath = path.join(filePath, 'index.html');
       const indexStat = await getPathInfo(filePath);
@@ -71,7 +79,7 @@ function servatron (options: ServatronHttpOptions) {
       }
     }
 
-    const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders (request.headers) : null;
+    const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(request.headers) : null;
     response.writeHead(200, {
       ...antiCorsHeaders,
       'content-type': mime.getType(filePath) || 'application/octet-stream'

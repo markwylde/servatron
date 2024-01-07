@@ -226,3 +226,83 @@ test('http2 - serve with spa mode', async t => {
   t.equal(responseData, fs.readFileSync('./test/exampleWithIndex/index.html', 'utf8'), 'should have the correct body');
   t.equal(response.headers.get('content-type'), 'text/html', 'should have the correct content-type header');
 });
+
+test('http2 - double encoded URL should result in 404', async t => {
+  t.plan(3);
+
+  const handler = servatron();
+  const { server, url } = createServer(handler);
+
+  const doubleEncodedURL = encodeURIComponent(encodeURIComponent('/../package.json'));
+  const response = await fetch(`${url}/${doubleEncodedURL}`, { session: { rejectUnauthorized: false } });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 404);
+  t.equal(responseData, '404 - not found', 'should return 404 for double encoded URLs');
+  t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+});
+
+test('http2 - encoded URL traversal outside directory should result in 404', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test'
+  });
+  const { server, url } = createServer(handler);
+
+  const encodedTraversalURL = encodeURIComponent('/../package.json');
+  const response = await fetch(`${url}/${encodedTraversalURL}`, { session: { rejectUnauthorized: false } });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 404);
+  t.equal(responseData, '404 - not found', 'should return 404 for encoded path traversal attempts');
+  t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+});
+
+test('http2 - valid encoded URL should serve file', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test'
+  });
+  const { server, url } = createServer(handler);
+
+  const fileName = 'some file.txt';
+  const encodedFileName = encodeURIComponent(fileName);
+  const validEncodedURL = `/exampleWithIndex/${encodedFileName}`;
+  const response = await fetch(`${url}${validEncodedURL}`, { session: { rejectUnauthorized: false } });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 200);
+  t.equal(responseData, fs.readFileSync(`./test/exampleWithIndex/${fileName}`, 'utf8'), 'should serve the correctly encoded file');
+  t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+});
+
+test('http2 - URL containing percent sign not part of encoding should result in 404', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test'
+  });
+  const { server, url } = createServer(handler);
+
+  const invalidURL = '/some%file.txt';
+  const response = await fetch(`${url}/${invalidURL}`, { session: { rejectUnauthorized: false } });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 404);
+  t.equal(responseData, '404 - not found', 'should return 404 for URLs with isolated percent signs');
+  t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+});
