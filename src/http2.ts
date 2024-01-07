@@ -63,7 +63,7 @@ function servatron (options: ServatronHttp2Options) {
       return;
     }
 
-    let filePath = found.filePath;
+    let filePath = decodeURIComponent(found.filePath);
     if (found.filePathType === PathType.Directory) {
       filePath = path.join(filePath, 'index.html');
       const indexStat = await getPathInfo(filePath);
