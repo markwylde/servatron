@@ -195,3 +195,89 @@ test('http - serve with spa mode', async t => {
   t.equal(response.data, fs.readFileSync('./test/exampleWithIndex/index.html', 'utf8'), 'should have the correct body');
   t.equal(response.headers['content-type'], 'text/html', 'should have the correct content-type header');
 });
+
+test('http - double encoded URL should result in 404', async t => {
+  t.plan(3);
+
+  const handler = servatron();
+  const { server, url } = createServer(handler);
+
+  const doubleEncodedURL = encodeURIComponent(encodeURIComponent('/../package.json'));
+  const response = await axios(`${url}/${doubleEncodedURL}`, {
+    transformResponse: [],
+    validateStatus: () => true
+  });
+
+  server.close();
+
+  t.equal(response.status, 404);
+  t.equal(response.data, '404 - not found', 'should return 404 for double encoded URLs');
+  t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
+
+test('http - encoded URL traversal outside directory should result in 404', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test'
+  });
+  const { server, url } = createServer(handler);
+
+  const encodedTraversalURL = encodeURIComponent('/../package.json');
+  const response = await axios(`${url}/${encodedTraversalURL}`, {
+    transformResponse: [],
+    validateStatus: () => true
+  });
+
+  server.close();
+
+  t.equal(response.status, 404);
+  t.equal(response.data, '404 - not found', 'should return 404 for encoded path traversal attempts');
+  t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
+
+test('http - valid encoded URL should serve file', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test'
+  });
+  const { server, url } = createServer(handler);
+
+  // Encode only the filename, not the entire path
+  const fileName = 'some file.txt';
+  const encodedFileName = encodeURIComponent(fileName);
+  const validEncodedURL = `/exampleWithIndex/${encodedFileName}`;
+  console.log(`${url}${validEncodedURL}`);
+  const response = await axios(`${url}${validEncodedURL}`, {
+    transformResponse: [],
+    validateStatus: () => true
+  });
+
+  server.close();
+
+  t.equal(response.status, 200);
+  t.equal(response.data, fs.readFileSync(`./test/exampleWithIndex/${fileName}`, 'utf8'), 'should serve the correctly encoded file');
+  t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
+
+test('http - URL containing percent sign not part of encoding should result in 404', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test'
+  });
+  const { server, url } = createServer(handler);
+
+  const invalidURL = '/some%file.txt';
+  const response = await axios(`${url}/${invalidURL}`, {
+    transformResponse: [],
+    validateStatus: () => true
+  });
+
+  server.close();
+
+  t.equal(response.status, 404);
+  t.equal(response.data, '404 - not found', 'should return 404 for URLs with isolated percent signs');
+  t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
