@@ -70,6 +70,21 @@ http.createServer(function (request, response) {
 import http2 from 'http2';
 import servatron from 'servatron/http2';
 
+const staticHandler = servatron({
+  directory: './dist',
+  spa: true,
+  spaIndex: 'index.html',
+  resolvers: {
+    '**/*.ejs': (file, content) => {
+      stream.respond({
+        'content-type': 'text/html',
+        ':status': 200
+      });
+      stream.end(ejs.render(content.toString(), { message: 'Hello World' }));
+    }
+  }
+})
+
 const server = http2.createSecureServer({
   key: fs.readFileSync('./key.pem'),
   cert: fs.readFileSync('./cert.pem')
