@@ -4,7 +4,7 @@ import fs from 'fs';
 import axios from 'axios';
 import test from 'basictap';
 
-const servatron = require('../http');
+import servatron from '../http';
 
 function createServer (handler) {
   const server = http.createServer(handler);
