@@ -2,6 +2,7 @@ import http2 from 'http2';
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime';
+import { minimatch } from 'minimatch';
 
 import { PathType, getPathInfo } from './getPathInfo.js';
 import { searchDirectoriesForPath } from './searchDirectoriesForPath.js';
@@ -11,7 +12,8 @@ export interface ServatronHttp2Options {
   directory: string | Array<string>,
   spa?: boolean,
   spaIndex?: string,
-  antiCors?: boolean
+  antiCors?: boolean,
+  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, stream: http2.ServerHttp2Stream) => string | Buffer | Promise<string | Buffer> }
 }
 
 function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
@@ -56,7 +58,7 @@ function servatron(options: ServatronHttp2Options) {
   }
 
   return async function (stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
-    let decodedPath
+    let decodedPath;
     try {
       decodedPath = decodeURIComponent(headers[':path'] as string);
     } catch (error) {
@@ -82,13 +84,46 @@ function servatron(options: ServatronHttp2Options) {
     }
 
     const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(headers) : null;
-    stream.respond({
-      ...antiCorsHeaders,
-      'content-type': mime.getType(filePath) || 'application/octet-stream',
-      ':status': 200
-    });
+    const contentType = mime.getType(filePath) || 'application/octet-stream';
 
-    fs.createReadStream(filePath). pipe(stream);
+    if (options.resolvers) {
+      let resolverMatched = false;
+      for (const pattern in options.resolvers) {
+        if (minimatch(filePath, pattern)) {
+          resolverMatched = true;
+          const resolver = options.resolvers[pattern];
+          try {
+            const data = await fs.promises.readFile(filePath);
+            for (const [headerKey, headerValue] of Object.entries(antiCorsHeaders || {})) {
+              stream.additionalHeaders({
+                [headerKey]: headerValue
+              });
+            }
+            await resolver(filePath, data, stream);
+          } catch (error) {
+            console.error('Error in resolver:', error);
+            send404(options, stream, headers);
+          }
+          return;
+        }
+      }
+      if (!resolverMatched) {
+        // No resolver matched, proceed with default behavior
+        stream.respond({
+          ...antiCorsHeaders,
+          'content-type': contentType,
+          ':status': 200
+        });
+      }
+    } else {
+      // No resolvers specified, proceed with default behavior
+      stream.respond({
+        ...antiCorsHeaders,
+        'content-type': contentType,
+        ':status': 200
+      });
+      fs.createReadStream(filePath).pipe(stream);
+    }
   };
 }
 
