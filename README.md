@@ -34,8 +34,8 @@ Optional arguments are:
 
 ### Code - HTTP 1
 ```javascript
-const http = require('http');
-const servatron = require('servatron/http');
+import http from 'http';
+import servatron from 'servatron/http';
 
 const staticHandler = servatron({
   directory: './dist',
@@ -67,8 +67,8 @@ http.createServer(function (request, response) {
 
 ### Code - HTTP 2
 ```javascript
-const http2 = require('http2');
-const servatron = require('servatron/http2');
+import http2 from 'http2';
+import servatron from 'servatron/http2';
 
 const server = http2.createSecureServer({
   key: fs.readFileSync('./key.pem'),
