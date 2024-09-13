@@ -2,6 +2,7 @@ import http2 from 'http2';
 import fs from 'fs';
 import { context } from 'fetch-h2';
 import test from 'basictap';
+import ejs from 'ejs';
 import servatron from '../http2';
 
 const { fetch, disconnectAll } = context({
@@ -303,4 +304,38 @@ test('http2 - URL containing percent sign not part of encoding should result in 
   t.equal(response.status, 404);
   t.equal(responseData, '404 - not found', 'should return 404 for URLs with isolated percent signs');
   t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+});
+
+test('http2 - resolvers - transforms content with resolver', async (t) => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test/exampleWithIndex',
+    resolvers: {
+      '**/*.ejs': (filePath, content, stream) => {
+        stream.respond({
+          'content-type': 'text/html',
+          ':status': 200
+        });
+        stream.end(ejs.render(content.toString(), { message: 'Hello World' }));
+      },
+    },
+  });
+  const { server, url } = createServer(handler);
+
+  const response = await fetch(`${url}/template.ejs`, {
+    session: { rejectUnauthorized: false },
+  });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 200);
+  t.equal(responseData, '<div>Hello World</div>\n', 'should render EJS template');
+  t.equal(
+    response.headers.get('content-type'),
+    'text/html',
+    'should have the correct content-type header'
+  );
 });

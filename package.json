@@ -35,19 +35,22 @@
   },
   "license": "MIT",
   "dependencies": {
-    "mime": "^4.0.4",
     "minimist": "^1.2.8"
   },
   "devDependencies": {
     "@types/mime": "^4.0.0",
+    "@types/minimatch": "^5.1.2",
     "@types/node": "^22.5.4",
     "@typescript-eslint/eslint-plugin": "^8.5.0",
     "@typescript-eslint/parser": "^8.5.0",
     "axios": "^1.7.7",
     "basictap": "^4.3.5",
     "c8": "^10.1.2",
+    "ejs": "^3.1.10",
     "eslint": "^8.57.0",
     "fetch-h2": "^3.0.2",
+    "mime": "^4.0.4",
+    "minimatch": "^10.0.1",
     "semistandard": "^17.0.0",
     "tsx": "^4.19.1",
     "typedoc": "^0.26.7",

@@ -40,7 +40,15 @@ const servatron = require('servatron/http');
 const staticHandler = servatron({
   directory: './dist',
   spa: true,
-  spaIndex: 'index.html'
+  spaIndex: 'index.html',
+  resolvers: {
+    '**/*.ejs': (file, content) => {
+      response.writeHead(200, {
+        'content-type': 'text/html'
+      });
+      response.end(ejs.render(content.toString(), { message: 'Hello World' }));
+    }
+  }
 })
 
 // Use only the staticHandler

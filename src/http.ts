@@ -2,6 +2,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import mime from 'mime';
+import { minimatch } from 'minimatch';
 
 import { PathType, getPathInfo } from './getPathInfo.js';
 import { searchDirectoriesForPath } from './searchDirectoriesForPath.js';
@@ -12,6 +13,7 @@ export interface ServatronHttpOptions {
   spa?: boolean,
   spaIndex?: string,
   antiCors?: boolean,
+  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, response: http.ServerResponse) => string | Buffer | Promise<string | Buffer> }
 }
 
 function send404 (options: ServatronHttpOptions, request: http.IncomingMessage, response: http.ServerResponse) {
@@ -54,7 +56,7 @@ function servatron(options: ServatronHttpOptions) {
   }
 
   return async function (request: http.IncomingMessage, response: http.ServerResponse) {
-    let decodedPath
+    let decodedPath;
     try {
       decodedPath = decodeURIComponent(request.url as string);
     } catch (error) {
@@ -80,12 +82,43 @@ function servatron(options: ServatronHttpOptions) {
     }
 
     const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(request.headers) : null;
-    response.writeHead(200, {
-      ...antiCorsHeaders,
-      'content-type': mime.getType(filePath) || 'application/octet-stream'
-    });
+    const contentType = mime.getType(filePath) || 'application/octet-stream';
 
-    fs.createReadStream(filePath).pipe(response);
+    if (options.resolvers) {
+      let resolverMatched = false;
+      for (const pattern in options.resolvers) {
+        if (minimatch(filePath, pattern)) {
+          resolverMatched = true;
+          const resolver = options.resolvers[pattern];
+          try {
+            const data = await fs.promises.readFile(filePath);
+            for (const [headerKey, headerValue] of Object.entries(antiCorsHeaders || {})) {
+              response.setHeader(headerKey, headerValue);
+            }
+            await resolver(filePath, data, response);
+          } catch (error) {
+            console.error('Error in resolver:', error);
+            send404(options, request, response);
+          }
+          return;
+        }
+      }
+      if (!resolverMatched) {
+        // No resolver matched, proceed with default behavior
+        response.writeHead(200, {
+          ...antiCorsHeaders,
+          'content-type': contentType
+        });
+        fs.createReadStream(filePath).pipe(response);
+      }
+    } else {
+      // No resolvers specified, proceed with default behavior
+      response.writeHead(200, {
+        ...antiCorsHeaders,
+        'content-type': contentType
+      });
+      fs.createReadStream(filePath).pipe(response);
+    }
   };
 }
 

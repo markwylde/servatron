@@ -1,6 +1,7 @@
 import http from 'http';
 import fs from 'fs';
 
+import ejs from 'ejs';
 import axios from 'axios';
 import test from 'basictap';
 
@@ -280,4 +281,36 @@ test('http - URL containing percent sign not part of encoding should result in 4
   t.equal(response.status, 404);
   t.equal(response.data, '404 - not found', 'should return 404 for URLs with isolated percent signs');
   t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
+
+test('http - resolvers - transforms content with resolver', async (t) => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test/exampleWithIndex',
+    resolvers: {
+      '**/*.ejs': (filePath, content, response) => {
+        response.writeHead(200, {
+          'content-type': 'text/html'
+        });
+        response.end(ejs.render(content.toString(), { message: 'Hello World' }));
+      },
+    },
+  });
+  const { server, url } = createServer(handler);
+
+  const response = await axios(`${url}/template.ejs`, {
+    transformResponse: [],
+    validateStatus: () => true,
+  });
+
+  server.close();
+
+  t.equal(response.status, 200);
+  t.equal(response.data, '<div>Hello World</div>\n', 'should render EJS template');
+  t.equal(
+    response.headers['content-type'],
+    'text/html',
+    'should have the correct content-type header'
+  );
 });
