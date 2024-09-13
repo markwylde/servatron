@@ -13,7 +13,7 @@ export interface ServatronHttpOptions {
   spa?: boolean,
   spaIndex?: string,
   antiCors?: boolean,
-  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, response: http.ServerResponse) => string | Buffer | Promise<string | Buffer> }
+  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, response: http.ServerResponse) => void }
 }
 
 function send404 (options: ServatronHttpOptions, request: http.IncomingMessage, response: http.ServerResponse) {

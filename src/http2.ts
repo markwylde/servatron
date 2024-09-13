@@ -13,7 +13,7 @@ export interface ServatronHttp2Options {
   spa?: boolean,
   spaIndex?: string,
   antiCors?: boolean,
-  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, stream: http2.ServerHttp2Stream) => string | Buffer | Promise<string | Buffer> }
+  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, stream: http2.ServerHttp2Stream) => void }
 }
 
 function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
