@@ -1,10 +1,8 @@
-const http2 = require('http2');
-const fs = require('fs');
-
-const { context } = require('fetch-h2');
-const test = require('basictap');
-
-const servatron = require('../http2');
+import http2 from 'http2';
+import fs from 'fs';
+import { context } from 'fetch-h2';
+import test from 'basictap';
+import servatron from '../http2';
 
 const { fetch, disconnectAll } = context({
   session: { rejectUnauthorized: false }

@@ -1,7 +1,7 @@
-import * as http from 'http';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as mime from 'mime';
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import mime from 'mime';
 
 import { PathType, getPathInfo } from './getPathInfo';
 import { searchDirectoriesForPath } from './searchDirectoriesForPath';

@@ -1,8 +1,8 @@
-const http = require('http');
-const fs = require('fs');
+import http from 'http';
+import fs from 'fs';
 
-const axios = require('axios');
-const test = require('basictap');
+import axios from 'axios';
+import test from 'basictap';
 
 const servatron = require('../http');
 

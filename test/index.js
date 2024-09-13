@@ -1,2 +1,2 @@
-require('./http');
-require('./http2');
+import  './http';
+import './http2';
