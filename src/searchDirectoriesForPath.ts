@@ -1,6 +1,6 @@
-import * as path from 'path';
+import path from 'path';
 
-import { PathType, getPathInfo } from './getPathInfo';
+import { PathType, getPathInfo } from './getPathInfo.js';
 
 interface FoundDirectory {
   directory: string,

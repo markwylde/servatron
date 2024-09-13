@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2015",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "declaration": true,
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./"
+    "outDir": "./",
+    "allowJs": true,
+    "checkJs": false
   },
   "exclude": [],
   "include": [

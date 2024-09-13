@@ -1,16 +1,21 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const fs = require('fs');
-const http = require('http');
-const http2 = require('http2');
-const minimist = require('minimist');
+import path from 'path';
+import fs from 'fs';
+import http from 'http';
+import http2 from 'http2';
+import minimist from 'minimist';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
 
-const servatron = require('../http');
-const servatronHttp2 = require('../http2');
+import servatron from '../http.js';
+import servatronHttp2 from '../http2.js';
 
 const argv = minimist(process.argv);
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 const bindHost = argv.b || argv.bind || '0.0.0.0';
 const port = argv.p || argv.port || 8000;

@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import mime from 'mime';
 
-import { PathType, getPathInfo } from './getPathInfo';
-import { searchDirectoriesForPath } from './searchDirectoriesForPath';
-import generateAntiCorsHeaders from './generateAntiCorsHeaders';
+import { PathType, getPathInfo } from './getPathInfo.js';
+import { searchDirectoriesForPath } from './searchDirectoriesForPath.js';
+import generateAntiCorsHeaders from './generateAntiCorsHeaders.js';
 
 export interface ServatronHttpOptions {
   directory: string | Array<string>,
@@ -90,7 +90,3 @@ function servatron(options: ServatronHttpOptions) {
 }
 
 export default servatron;
-
-if (module) {
-  module.exports = servatron;
-}
