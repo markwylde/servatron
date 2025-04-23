@@ -13,6 +13,7 @@ export interface ServatronHttp2Options {
   spa?: boolean,
   spaIndex?: string,
   antiCors?: boolean,
+  index?: Array<string>,
   resolvers?: { [pattern: string]: (filePath: string, content: Buffer, stream: http2.ServerHttp2Stream) => void }
 }
 
@@ -74,13 +75,46 @@ function servatron(options: ServatronHttp2Options) {
     }
 
     let filePath = found.filePath;
+
+    // Handle directory request
     if (found.filePathType === PathType.Directory) {
-      filePath = path.join(filePath, 'index.html');
-      const indexStat = await getPathInfo(filePath);
-      if (indexStat === PathType.NotFound) {
+      let indexFilePath = null;
+
+      // Check for index files if configured
+      if (options.index && options.index.length > 0) {
+        for (const indexFile of options.index) {
+          const testPath = path.join(filePath, indexFile);
+          try {
+            const stats = await fs.promises.stat(testPath);
+            if (stats.isFile()) {
+              indexFilePath = testPath;
+              break;
+            }
+          } catch (error) {
+            // File doesn't exist, continue to next
+          }
+        }
+      } else {
+        // Default to index.html
+        const defaultPath = path.join(filePath, 'index.html');
+        try {
+          const stats = await fs.promises.stat(defaultPath);
+          if (stats.isFile()) {
+            indexFilePath = defaultPath;
+          }
+        } catch (error) {
+          // index.html not found
+        }
+      }
+
+      // If no index file found, send 404
+      if (!indexFilePath) {
         send404(options, stream, headers);
         return;
       }
+
+      // Update the file path to the found index file
+      filePath = indexFilePath;
     }
 
     const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(headers) : null;
@@ -114,6 +148,7 @@ function servatron(options: ServatronHttp2Options) {
           'content-type': contentType,
           ':status': 200
         });
+        fs.createReadStream(filePath).pipe(stream);
       }
     } else {
       // No resolvers specified, proceed with default behavior
