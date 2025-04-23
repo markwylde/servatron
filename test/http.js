@@ -364,7 +364,7 @@ test('http - index option with nested directories', async t => {
 
   const handler = servatron({
     directory: 'test',
-    index: ['index.html']
+    index: ['index.html', 'index.ejs']
   });
   const { server, url } = createServer(handler);
 
@@ -384,71 +384,113 @@ test('http - index option with nested directories', async t => {
 
   // Check root directory index
   t.equal(rootResponse.status, 200);
-  t.equal(rootResponse.data, '<body>This is a test</body>', 'should serve the correct index file');
+  t.equal(rootResponse.data, '<div><%= message %></div>', 'should serve the index.ejs file');
   t.equal(rootResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
 
   // Check nested directory index
   t.equal(nestedResponse.status, 200);
-  t.equal(nestedResponse.data, '<body>This is one</body>', 'should serve the correct nested index file');
+  t.equal(nestedResponse.data, '<span><%= message %></span>', 'should serve the index.ejs file');
   t.equal(nestedResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
 });
 
 test('http - index option with nested directories and resolver', async t => {
   t.plan(6);
 
-  // Create a test directory with nested structure containing an index.ejs file
-  const testDir = path.join('test', 'tempNestedTest');
-  const nestedDir = path.join(testDir, 'nested');
-
-  fs.mkdirSync(testDir, { recursive: true });
-  fs.mkdirSync(nestedDir, { recursive: true });
-
-  fs.writeFileSync(path.join(testDir, 'index.ejs'), '<div><%= message %></div>');
-  fs.writeFileSync(path.join(nestedDir, 'index.ejs'), '<span><%= message %></span>');
-
-  try {
-    const handler = servatron({
-      directory: 'test',
-      index: ['index.html', 'index.ejs'],
-      resolvers: {
-        '**/*.ejs': (filePath, content, response) => {
-          const isNested = filePath.includes('nested');
-          response.writeHead(200, {
-            'content-type': 'text/html'
-          });
-          response.end(ejs.render(content.toString(), {
-            message: isNested ? 'Nested Content' : 'Root Content'
-          }));
-        },
+  const handler = servatron({
+    directory: 'test',
+    index: ['index.ejs'],
+    resolvers: {
+      '**/*.ejs': (filePath, content, response) => {
+        const isNested = filePath.includes('one');
+        response.writeHead(200, {
+          'content-type': 'text/html'
+        });
+        response.end(ejs.render(content.toString(), {
+          message: isNested ? 'Nested Content' : 'Root Content'
+        }));
       },
-    });
-    const { server, url } = createServer(handler);
+    },
+  });
+  const { server, url } = createServer(handler);
 
-    // Test root directory index with resolver
-    const rootResponse = await axios(`${url}/tempNestedTest`, {
-      transformResponse: [],
-      validateStatus: () => true
-    });
+  // Test root directory index with resolver
+  const rootResponse = await axios(`${url}/exampleWithNestedIndex`, {
+    transformResponse: [],
+    validateStatus: () => true,
+    headers: {
+      'Accept': 'text/html,*/*'
+    }
+  });
 
-    // Test nested directory index with resolver
-    const nestedResponse = await axios(`${url}/tempNestedTest/nested`, {
-      transformResponse: [],
-      validateStatus: () => true
-    });
+  // Test nested directory index with resolver
+  const nestedResponse = await axios(`${url}/exampleWithNestedIndex/one`, {
+    transformResponse: [],
+    validateStatus: () => true,
+    headers: {
+      'Accept': 'text/html,*/*'
+    }
+  });
 
-    server.close();
+  server.close();
 
-    // Check root directory index
-    t.equal(rootResponse.status, 200);
-    t.equal(rootResponse.data, '<div>Root Content</div>', 'should serve the correct index file with resolver');
-    t.equal(rootResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
+  // Check root directory index
+  t.equal(rootResponse.status, 200);
+  t.equal(rootResponse.data, '<div>Root Content</div>', 'should serve the correct index file with resolver');
+  t.equal(rootResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
 
-    // Check nested directory index
-    t.equal(nestedResponse.status, 200);
-    t.equal(nestedResponse.data, '<span>Nested Content</span>', 'should serve the correct nested index file with resolver');
-    t.equal(nestedResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
-  } finally {
-    // Clean up test directory
-    fs.rmSync(testDir, { recursive: true, force: true });
-  }
+  // Check nested directory index
+  t.equal(nestedResponse.status, 200);
+  t.equal(nestedResponse.data, '<span>Nested Content</span>', 'should serve the correct nested index file with resolver');
+  t.equal(nestedResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
+});
+
+test('http - index option with query string parameters', async t => {
+  t.plan(6);
+
+  const handler = servatron({
+    directory: 'test',
+    index: ['index.ejs'],
+    resolvers: {
+      '**/*.ejs': (filePath, content, response) => {
+        const isNested = filePath.includes('one');
+        response.writeHead(200, {
+          'content-type': 'text/html'
+        });
+        response.end(ejs.render(content.toString(), {
+          message: isNested ? 'Query String Test' : 'Root Content'
+        }));
+      },
+    },
+  });
+  const { server, url } = createServer(handler);
+
+  // Test with query string in root directory
+  const rootResponse = await axios(`${url}/exampleWithNestedIndex?param1=value1&param2=value2`, {
+    transformResponse: [],
+    validateStatus: () => true,
+    headers: {
+      'Accept': 'text/html,*/*'
+    }
+  });
+
+  // Test with query string in nested directory
+  const nestedResponse = await axios(`${url}/exampleWithNestedIndex/one?param1=value1&param2=value2`, {
+    transformResponse: [],
+    validateStatus: () => true,
+    headers: {
+      'Accept': 'text/html,*/*'
+    }
+  });
+
+  server.close();
+
+  // Check root directory index with query string
+  t.equal(rootResponse.status, 200, 'should serve index file with query string in root');
+  t.equal(rootResponse.data, '<div>Root Content</div>', 'should serve the correct index file with resolver');
+  t.equal(rootResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
+
+  // Check nested directory index with query string
+  t.equal(nestedResponse.status, 200, 'should serve index file with query string in nested directory');
+  t.equal(nestedResponse.data, '<span>Query String Test</span>', 'should serve the correct nested index file with resolver');
+  t.equal(nestedResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
 });

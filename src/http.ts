@@ -59,7 +59,9 @@ function servatron(options: ServatronHttpOptions) {
   return async function (request: http.IncomingMessage, response: http.ServerResponse) {
     let decodedPath;
     try {
-      decodedPath = decodeURIComponent(request.url as string);
+      // Extract just the path part without query string
+      const urlPath = request.url?.split('?')[0] || '';
+      decodedPath = decodeURIComponent(urlPath);
     } catch (error) {
       send404(options, request, response);
       return;
@@ -119,6 +121,17 @@ function servatron(options: ServatronHttpOptions) {
     const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(request.headers) : null;
     const contentType = mime.getType(filePath) || 'application/octet-stream';
 
+    // Only adjust content type for index files that don't have a recognized mime type
+    let adjustedContentType = contentType;
+    if (contentType === 'application/octet-stream' && options.index && options.index.length > 0) {
+      // Check if this is one of our configured index files
+      const fileName = path.basename(filePath);
+      if (options.index.includes(fileName)) {
+        // This is a configured index file with no recognized mime type, use text/html
+        adjustedContentType = 'text/html';
+      }
+    }
+
     if (options.resolvers) {
       let resolverMatched = false;
       for (const pattern in options.resolvers) {
@@ -142,7 +155,7 @@ function servatron(options: ServatronHttpOptions) {
         // No resolver matched, proceed with default behavior
         response.writeHead(200, {
           ...antiCorsHeaders,
-          'content-type': contentType
+          'content-type': adjustedContentType
         });
         fs.createReadStream(filePath).pipe(response);
       }
@@ -150,7 +163,7 @@ function servatron(options: ServatronHttpOptions) {
       // No resolvers specified, proceed with default behavior
       response.writeHead(200, {
         ...antiCorsHeaders,
-        'content-type': contentType
+        'content-type': adjustedContentType
       });
       fs.createReadStream(filePath).pipe(response);
     }
