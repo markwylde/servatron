@@ -61,7 +61,9 @@ function servatron(options: ServatronHttp2Options) {
   return async function (stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
     let decodedPath;
     try {
-      decodedPath = decodeURIComponent(headers[':path'] as string);
+      // Extract just the path part without query string
+      const urlPath = (headers[':path'] as string)?.split('?')[0] || '';
+      decodedPath = decodeURIComponent(urlPath);
     } catch (error) {
       send404(options, stream, headers);
       return;
@@ -120,6 +122,17 @@ function servatron(options: ServatronHttp2Options) {
     const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(headers) : null;
     const contentType = mime.getType(filePath) || 'application/octet-stream';
 
+    // Only adjust content type for index files that don't have a recognized mime type
+    let adjustedContentType = contentType;
+    if (contentType === 'application/octet-stream' && options.index && options.index.length > 0) {
+      // Check if this is one of our configured index files
+      const fileName = path.basename(filePath);
+      if (options.index.includes(fileName)) {
+        // This is a configured index file with no recognized mime type, use text/html
+        adjustedContentType = 'text/html';
+      }
+    }
+
     if (options.resolvers) {
       let resolverMatched = false;
       for (const pattern in options.resolvers) {
@@ -145,7 +158,7 @@ function servatron(options: ServatronHttp2Options) {
         // No resolver matched, proceed with default behavior
         stream.respond({
           ...antiCorsHeaders,
-          'content-type': contentType,
+          'content-type': adjustedContentType,
           ':status': 200
         });
         fs.createReadStream(filePath).pipe(stream);
@@ -154,7 +167,7 @@ function servatron(options: ServatronHttp2Options) {
       // No resolvers specified, proceed with default behavior
       stream.respond({
         ...antiCorsHeaders,
-        'content-type': contentType,
+        'content-type': adjustedContentType,
         ':status': 200
       });
       fs.createReadStream(filePath).pipe(stream);
