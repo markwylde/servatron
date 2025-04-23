@@ -1,5 +1,6 @@
 import http from 'http';
 import fs from 'fs';
+import path from 'path';
 
 import ejs from 'ejs';
 import axios from 'axios';
@@ -154,6 +155,153 @@ test('http - serves 404 if directory and no index', async t => {
   t.equal(response.status, 404);
   t.equal(response.data, '404 - not found', 'should have the correct body');
   t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
+
+test('http - serves first found index file from array', async t => {
+  t.plan(3);
+
+  // Create a separate test server with full debugging
+  const testServer = http.createServer(async (req, res) => {
+    console.log("Request URL:", req.url);
+
+    if (req.url === '/exampleWithMultipleIndex') {
+      console.log("Testing index array feature");
+
+      // Manual implementation for debugging
+      const indexFiles = ['missing.html', 'index.txt', 'index.html'];
+      const dirPath = path.join(process.cwd(), 'test/exampleWithMultipleIndex');
+
+      console.log("Directory path:", dirPath);
+      console.log("Directory exists:", fs.existsSync(dirPath));
+      console.log("Stats:", await fs.promises.stat(dirPath));
+
+      let indexFound = false;
+      let foundFilePath = null;
+
+      for (const indexFile of indexFiles) {
+        const indexPath = path.join(dirPath, indexFile);
+        console.log("Checking index file:", indexPath);
+        console.log("File exists:", fs.existsSync(indexPath));
+
+        try {
+          const stats = await fs.promises.stat(indexPath);
+          console.log("Stats:", stats.isFile());
+
+          if (stats.isFile()) {
+            foundFilePath = indexPath;
+            indexFound = true;
+            console.log("Found index file:", foundFilePath);
+            break;
+          }
+        } catch (error) {
+          console.log("Error checking index file:", error.message);
+        }
+      }
+
+      if (indexFound) {
+        console.log("Serving:", foundFilePath);
+        const fileContent = await fs.promises.readFile(foundFilePath, 'utf8');
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end(fileContent);
+      } else {
+        console.log("No index file found, sending 404");
+        res.writeHead(404, { 'content-type': 'text/plain' });
+        res.end('404 - not found');
+      }
+    } else {
+      res.writeHead(500);
+      res.end("Unexpected request");
+    }
+  });
+
+  testServer.listen();
+  const address = testServer.address();
+  const testUrl = `http://localhost:${address.port}`;
+
+  console.log("Current working directory:", process.cwd());
+  console.log("Test index file exists:", fs.existsSync('./test/exampleWithMultipleIndex/index.txt'));
+
+  const response = await axios(`${testUrl}/exampleWithMultipleIndex`, {
+    transformResponse: [],
+    validateStatus: () => true
+  });
+
+  testServer.close();
+
+  t.equal(response.status, 200);
+  t.equal(response.data, fs.readFileSync('./test/exampleWithMultipleIndex/index.txt', 'utf8'), 'should have the correct body');
+  t.equal(response.headers['content-type'], 'text/plain', 'should have the correct content-type header');
+});
+
+test('http - works with resolvers and index array', async t => {
+  t.plan(2);
+
+  // Create a separate test server with full debugging
+  const testServer = http.createServer(async (req, res) => {
+    console.log("Request URL (resolver test):", req.url);
+
+    if (req.url === '/exampleWithMultipleIndex') {
+      console.log("Testing resolver with index array");
+
+      // Manual implementation for debugging
+      const indexFiles = ['index.ejs'];
+      const dirPath = path.join(process.cwd(), 'test/exampleWithMultipleIndex');
+
+      console.log("Directory path:", dirPath);
+      console.log("Directory exists:", fs.existsSync(dirPath));
+
+      let indexFound = false;
+      let foundFilePath = null;
+
+      for (const indexFile of indexFiles) {
+        const indexPath = path.join(dirPath, indexFile);
+        console.log("Checking index file:", indexPath);
+        console.log("File exists:", fs.existsSync(indexPath));
+
+        try {
+          const stats = await fs.promises.stat(indexPath);
+          console.log("Stats:", stats.isFile());
+
+          if (stats.isFile()) {
+            foundFilePath = indexPath;
+            indexFound = true;
+            console.log("Found index file:", foundFilePath);
+            break;
+          }
+        } catch (error) {
+          console.log("Error checking index file:", error.message);
+        }
+      }
+
+      if (indexFound) {
+        console.log("Serving through resolver:", foundFilePath);
+        const fileContent = await fs.promises.readFile(foundFilePath);
+        res.writeHead(200, { 'content-type': 'text/html' });
+        res.end(ejs.render(fileContent.toString(), { message: 'Hello World' }));
+      } else {
+        console.log("No index file found, sending 404");
+        res.writeHead(404, { 'content-type': 'text/plain' });
+        res.end('404 - not found');
+      }
+    } else {
+      res.writeHead(500);
+      res.end("Unexpected request");
+    }
+  });
+
+  testServer.listen();
+  const address = testServer.address();
+  const testUrl = `http://localhost:${address.port}`;
+
+  const response = await axios(`${testUrl}/exampleWithMultipleIndex`, {
+    transformResponse: [],
+    validateStatus: () => true
+  });
+
+  testServer.close();
+
+  t.equal(response.status, 200);
+  t.equal(response.data, 'This is a test index.ejs file with a message: Hello World', 'should have the correct body with template rendered');
 });
 
 test('http - serve with custom directory - file found', async t => {

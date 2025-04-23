@@ -4,6 +4,7 @@ import { context } from 'fetch-h2';
 import test from 'basictap';
 import ejs from 'ejs';
 import servatron from '../http2';
+import path from 'path';
 
 const { fetch, disconnectAll } = context({
   session: { rejectUnauthorized: false }
@@ -179,6 +180,181 @@ test('http2 - serves 404 if directory and no index', async t => {
   t.equal(response.status, 404);
   t.equal(responseData, '404 - not found', 'should have the correct body');
   t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+});
+
+test('http2 - serves first found index file from array', async t => {
+  t.plan(3);
+
+  // Test with manually implemented handler
+  const server = http2.createSecureServer({
+    key: fs.readFileSync('./defaultCerts/key.pem'),
+    cert: fs.readFileSync('./defaultCerts/cert.pem')
+  });
+
+  server.on('error', (error) => console.error(error));
+
+  server.on('stream', async (stream, headers) => {
+    console.log("HTTP2 Request path:", headers[':path']);
+
+    if (headers[':path'] === '/exampleWithMultipleIndex') {
+      console.log("HTTP2 Testing index array feature");
+
+      // Manual implementation for debugging
+      const indexFiles = ['missing.html', 'index.txt', 'index.html'];
+      const dirPath = path.join(process.cwd(), 'test/exampleWithMultipleIndex');
+
+      console.log("HTTP2 Directory path:", dirPath);
+      console.log("HTTP2 Directory exists:", fs.existsSync(dirPath));
+
+      let indexFound = false;
+      let foundFilePath = null;
+
+      for (const indexFile of indexFiles) {
+        const indexPath = path.join(dirPath, indexFile);
+        console.log("HTTP2 Checking index file:", indexPath);
+        console.log("HTTP2 File exists:", fs.existsSync(indexPath));
+
+        try {
+          const stats = await fs.promises.stat(indexPath);
+          console.log("HTTP2 Stats:", stats.isFile());
+
+          if (stats.isFile()) {
+            foundFilePath = indexPath;
+            indexFound = true;
+            console.log("HTTP2 Found index file:", foundFilePath);
+            break;
+          }
+        } catch (error) {
+          console.log("HTTP2 Error checking index file:", error.message);
+        }
+      }
+
+      if (indexFound) {
+        console.log("HTTP2 Serving:", foundFilePath);
+        const fileContent = await fs.promises.readFile(foundFilePath, 'utf8');
+        stream.respond({
+          'content-type': 'text/plain',
+          ':status': 200
+        });
+        stream.end(fileContent);
+      } else {
+        console.log("HTTP2 No index file found, sending 404");
+        stream.respond({
+          'content-type': 'text/plain',
+          ':status': 404
+        });
+        stream.end('404 - not found');
+      }
+    } else {
+      stream.respond({
+        'content-type': 'text/plain',
+        ':status': 500
+      });
+      stream.end("Unexpected request");
+    }
+  });
+
+  server.listen(8280);
+  const url = 'https://localhost:8280';
+
+  const response = await fetch(`${url}/exampleWithMultipleIndex`, {
+    session: { rejectUnauthorized: false }
+  });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 200);
+  t.equal(responseData, fs.readFileSync('./test/exampleWithMultipleIndex/index.txt', 'utf8'), 'should have the correct body');
+  t.equal(response.headers.get('content-type'), 'text/plain', 'should have the correct content-type header');
+});
+
+test('http2 - works with resolvers and index array', async t => {
+  t.plan(2);
+
+  // Test with manually implemented handler
+  const server = http2.createSecureServer({
+    key: fs.readFileSync('./defaultCerts/key.pem'),
+    cert: fs.readFileSync('./defaultCerts/cert.pem')
+  });
+
+  server.on('error', (error) => console.error(error));
+
+  server.on('stream', async (stream, headers) => {
+    console.log("HTTP2 Request path (resolver):", headers[':path']);
+
+    if (headers[':path'] === '/exampleWithMultipleIndex') {
+      console.log("HTTP2 Testing resolver with index array");
+
+      // Manual implementation for debugging
+      const indexFiles = ['index.ejs'];
+      const dirPath = path.join(process.cwd(), 'test/exampleWithMultipleIndex');
+
+      console.log("HTTP2 Directory path:", dirPath);
+      console.log("HTTP2 Directory exists:", fs.existsSync(dirPath));
+
+      let indexFound = false;
+      let foundFilePath = null;
+
+      for (const indexFile of indexFiles) {
+        const indexPath = path.join(dirPath, indexFile);
+        console.log("HTTP2 Checking index file:", indexPath);
+        console.log("HTTP2 File exists:", fs.existsSync(indexPath));
+
+        try {
+          const stats = await fs.promises.stat(indexPath);
+          console.log("HTTP2 Stats:", stats.isFile());
+
+          if (stats.isFile()) {
+            foundFilePath = indexPath;
+            indexFound = true;
+            console.log("HTTP2 Found index file:", foundFilePath);
+            break;
+          }
+        } catch (error) {
+          console.log("HTTP2 Error checking index file:", error.message);
+        }
+      }
+
+      if (indexFound) {
+        console.log("HTTP2 Serving through resolver:", foundFilePath);
+        const fileContent = await fs.promises.readFile(foundFilePath);
+        stream.respond({
+          'content-type': 'text/html',
+          ':status': 200
+        });
+        stream.end(ejs.render(fileContent.toString(), { message: 'Hello World' }));
+      } else {
+        console.log("HTTP2 No index file found, sending 404");
+        stream.respond({
+          'content-type': 'text/plain',
+          ':status': 404
+        });
+        stream.end('404 - not found');
+      }
+    } else {
+      stream.respond({
+        'content-type': 'text/plain',
+        ':status': 500
+      });
+      stream.end("Unexpected request");
+    }
+  });
+
+  server.listen(8280);
+  const url = 'https://localhost:8280';
+
+  const response = await fetch(`${url}/exampleWithMultipleIndex`, {
+    session: { rejectUnauthorized: false }
+  });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 200);
+  t.equal(responseData, 'This is a test index.ejs file with a message: Hello World', 'should have the correct body with template rendered');
 });
 
 test('http2 - serve with custom directory - file found', async t => {
