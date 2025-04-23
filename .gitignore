@@ -2,5 +2,4 @@ node_modules
 docs
 /*.ts
 /*.js
-!eslint.config.js
 coverage
