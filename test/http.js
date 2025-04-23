@@ -1,6 +1,5 @@
 import http from 'http';
 import fs from 'fs';
-import path from 'path';
 
 import ejs from 'ejs';
 import axios from 'axios';

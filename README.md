@@ -25,6 +25,7 @@ Optional arguments are:
 --port (-p) number             what port to listen on (default: 8000)
 --spa                          when a path is not found, deliver the index file
 --spa-index                    what name spa mode should look for the html file (default: index.html)
+--index                        specify index file(s) to serve for directories (can be specified multiple times)
 --http2                        use http2 as the server protocol
 --key                          what key to use for http2
 --cert                         what cert to use for http2
@@ -42,7 +43,7 @@ const staticHandler = servatron({
   spa: true,
   spaIndex: 'index.html',
   resolvers: {
-    '**/*.ejs': (file, content) => {
+    '**/*.ejs': (file, content, response) => {
       response.writeHead(200, {
         'content-type': 'text/html'
       });
@@ -75,7 +76,7 @@ const staticHandler = servatron({
   spa: true,
   spaIndex: 'index.html',
   resolvers: {
-    '**/*.ejs': (file, content) => {
+    '**/*.ejs': (file, content, stream) => {
       stream.respond({
         'content-type': 'text/html',
         ':status': 200

@@ -23,6 +23,7 @@ const directory = argv.d || argv.directory;
 const spa = argv.s || argv.spa;
 const spaIndex = argv.i || argv['spa-index'];
 const antiCors = argv['anti-cors'];
+const index = argv.index ? (Array.isArray(argv.index) ? argv.index : [argv.index]) : undefined;
 const isHttp2 = argv.http2;
 const key = argv.key || path.resolve(__dirname, '../defaultCerts/key.pem');
 const cert = argv.cert || path.resolve(__dirname, '../defaultCerts/cert.pem');
@@ -33,7 +34,8 @@ function main () {
     directory,
     spa,
     spaIndex,
-    antiCors
+    antiCors,
+    index
   });
 
   const server = http.createServer(handler);
@@ -51,7 +53,8 @@ function mainHttp2 () {
     directory,
     spa,
     spaIndex,
-    antiCors
+    antiCors,
+    index
   });
 
   const server = http2.createSecureServer({
@@ -84,6 +87,7 @@ if (argv.help || argv._[2] === 'help') {
     '  --port (-p) number             what port to listen on (default: 8000)',
     '  --spa                          when a path is not found, deliver the index file',
     '  --spa-index                    what name spa mode should look for the html file (default: index.html)',
+    '  --index                        specify index file(s) to serve for directories (can be specified multiple times)',
     '  --http2                        use http2 as the server protocol',
     '  --key                          what key to use for http2',
     '  --cert                         what cert to use for http2',
