@@ -1,6 +1,6 @@
-import http from 'http';
-import path from 'path';
-import fs from 'fs';
+import http from 'node:http';
+import path from 'node:path';
+import fs from 'node:fs';
 
 import ejs from 'ejs';
 import axios from 'axios';
@@ -493,4 +493,38 @@ test('http - index option with query string parameters', async t => {
   t.equal(nestedResponse.status, 200, 'should serve index file with query string in nested directory');
   t.equal(nestedResponse.data, '<span>Query String Test</span>', 'should serve the correct nested index file with resolver');
   t.equal(nestedResponse.headers['content-type'], 'text/html', 'should have the correct content-type header');
+});
+
+test('http - spa mode with ejs spaIndex and resolver', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test/exampleWithIndex',
+    spa: true,
+    spaIndex: 'template.ejs', // Use an EJS file as spaIndex
+    resolvers: {
+      '**/*.ejs': (filePath, content, response) => {
+        response.writeHead(200, {
+          'content-type': 'text/html'
+        });
+        response.end(ejs.render(content.toString(), { message: 'SPA Fallback EJS' }));
+      },
+    },
+  });
+  const { server, url } = createServer(handler);
+
+  const response = await axios(`${url}/a-non-existent-path`, { // Request a path that will trigger SPA fallback
+    transformResponse: [],
+    validateStatus: () => true,
+  });
+
+  server.close();
+
+  t.equal(response.status, 200, 'should return 200 for SPA fallback');
+  t.equal(response.data, '<div>SPA Fallback EJS</div>\n', 'should render EJS spaIndex via resolver');
+  t.equal(
+    response.headers['content-type'],
+    'text/html',
+    'should have content-type set by resolver for spaIndex'
+  );
 });

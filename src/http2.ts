@@ -1,6 +1,7 @@
-import http2 from 'http2';
-import fs from 'fs';
-import path from 'path';
+import type { IncomingHttpHeaders, ServerHttp2Stream } from 'node:http2';
+import http2 from 'node:http2';
+import fs from 'node:fs';
+import path from 'node:path';
 import mime from 'mime';
 import { minimatch } from 'minimatch';
 
@@ -14,13 +15,44 @@ export interface ServatronHttp2Options {
   spaIndex?: string,
   antiCors?: boolean,
   index?: Array<string>,
-  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, stream: http2.ServerHttp2Stream) => void }
+  // Use ServerHttp2Stream from node:http2 types
+  resolvers?: { [pattern: string]: (filePath: string, content: Buffer, stream: ServerHttp2Stream) => void }
 }
 
-function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
+// Removed duplicate interface definition
+
+function send404 (options: ServatronHttp2Options, stream: ServerHttp2Stream, headers: IncomingHttpHeaders) {
   const antiCorsHeaders = options.antiCors ? generateAntiCorsHeaders(headers) : null;
 
   if (options.spa && options.spaIndex) {
+    // Check if a resolver matches the spaIndex
+    if (options.resolvers) {
+      for (const pattern in options.resolvers) {
+        if (minimatch(options.spaIndex, pattern)) {
+          const resolver = options.resolvers[pattern];
+          fs.readFile(options.spaIndex, async (err: NodeJS.ErrnoException | null, data: Buffer) => {
+            if (err) {
+              console.error(`Error reading spaIndex file ${options.spaIndex}:`, err);
+              stream.respond({ ...antiCorsHeaders, 'content-type': 'text/plain', ':status': 500 });
+              stream.end('Internal Server Error');
+              return;
+            }
+            try {
+              if (antiCorsHeaders) {
+                stream.additionalHeaders(antiCorsHeaders);
+              }
+              await resolver(options.spaIndex as string, data, stream);
+            } catch (error) {
+              console.error('Error in SPA resolver:', error);
+              stream.respond({ ...antiCorsHeaders, 'content-type': 'text/plain', ':status': 500 });
+              stream.end('Internal Server Error');
+            }
+          });
+          return;
+        }
+      }
+    }
+    // No resolver matched or no resolvers defined, serve SPA index directly
     stream.respond({
       ...antiCorsHeaders,
       'content-type': mime.getType(options.spaIndex) || 'application/octet-stream',
@@ -43,14 +75,30 @@ function send404 (options: ServatronHttp2Options, stream: http2.ServerHttp2Strea
  * Create a handler that will respond to a request
  * with the response from a static file lookup.
  **/
-function servatron(options: ServatronHttp2Options) {
-  options = options || { directory: process.cwd() };
-  options.directory = options.directory || process.cwd();
+const servatron = (optionsInput?: ServatronHttp2Options) => {
+  const options: ServatronHttp2Options = {
+    directory: process.cwd(),
+    ...optionsInput,
+  };
+
+  // Ensure directory is always a non-empty array or a string.
+  if (!options.directory || (Array.isArray(options.directory) && options.directory.length === 0)) {
+    options.directory = process.cwd();
+  }
 
   const directories = Array.isArray(options.directory) ? options.directory : [options.directory];
 
+  // Determine the base path for SPA index, ensuring it's a string.
+  let spaBasePath: string;
+  if (Array.isArray(options.directory)) {
+    spaBasePath = options.directory[0]; // Must have at least one element due to the check above
+  } else {
+    spaBasePath = options.directory; // It's a string
+  }
+
   if (options.spa) {
-    options.spaIndex = path.join(directories[0], options.spaIndex || 'index.html');
+    const spaIndexFile = options.spaIndex || 'index.html';
+    options.spaIndex = path.join(spaBasePath, spaIndexFile);
     getPathInfo(options.spaIndex).then(pathInfo => {
       if (pathInfo !== PathType.File) {
         console.log(`--spa mode will not work as index file (${options.spaIndex}) not found`);
@@ -58,7 +106,7 @@ function servatron(options: ServatronHttp2Options) {
     });
   }
 
-  return async function (stream: http2.ServerHttp2Stream, headers: http2.IncomingHttpHeaders) {
+  return async (stream: ServerHttp2Stream, headers: IncomingHttpHeaders) => {
     let decodedPath;
     try {
       // Extract just the path part without query string

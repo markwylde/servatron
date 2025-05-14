@@ -1,10 +1,10 @@
-import http2 from 'http2';
-import fs from 'fs';
+import http2 from 'node:http2';
+import fs from 'node:fs';
 import { context } from 'fetch-h2';
 import test from 'basictap';
 import ejs from 'ejs';
 import servatron from '../http2';
-import path from 'path';
+import path from 'node:path';
 
 const { fetch, disconnectAll } = context({
   session: { rejectUnauthorized: false }
@@ -643,4 +643,40 @@ test('http2 - index option with query string parameters', async t => {
   t.equal(nestedResponse.status, 200, 'should serve index file with query string in nested directory');
   t.equal(nestedData, '<span>Query String Test</span>', 'should serve the correct nested index file with resolver');
   t.equal(nestedResponse.headers.get('content-type'), 'text/html', 'should have the correct content-type header');
+});
+
+test('http2 - spa mode with ejs spaIndex and resolver', async t => {
+  t.plan(3);
+
+  const handler = servatron({
+    directory: 'test/exampleWithIndex',
+    spa: true,
+    spaIndex: 'template.ejs', // Use an EJS file as spaIndex
+    resolvers: {
+      '**/*.ejs': (filePath, content, stream) => {
+        stream.respond({
+          'content-type': 'text/html',
+          ':status': 200
+        });
+        stream.end(ejs.render(content.toString(), { message: 'SPA Fallback EJS' }));
+      },
+    },
+  });
+  const { server, url } = createServer(handler);
+
+  const response = await fetch(`${url}/a-non-existent-path`, { // Request a path that will trigger SPA fallback
+    session: { rejectUnauthorized: false },
+  });
+  const responseData = await response.text();
+
+  server.close();
+  disconnectAll();
+
+  t.equal(response.status, 200, 'should return 200 for SPA fallback');
+  t.equal(responseData, '<div>SPA Fallback EJS</div>\n', 'should render EJS spaIndex via resolver');
+  t.equal(
+    response.headers.get('content-type'),
+    'text/html',
+    'should have content-type set by resolver for spaIndex'
+  );
 });
